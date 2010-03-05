@@ -1,0 +1,87 @@
+// OpenCollada Model resource.
+// -------------------------------------------------------------------
+// Copyright (C) 2007 OpenEngine.dk (See AUTHORS) 
+// Modified by Anders Bach Nielsen <abachn@daimi.au.dk> - 21. Nov 2007
+// 
+// This program is free software; It is covered by the GNU General 
+// Public License version 2 or any later version. 
+// See the GNU General Public License for more details (see LICENSE). 
+//--------------------------------------------------------------------
+
+#ifndef _OE_ASSIMP_RESOURCE_H_
+#define _OE_ASSIMP_RESOURCE_H_
+
+#include <Resources/IModelResource.h>
+#include <Resources/IResourcePlugin.h>
+#include <Geometry/DrawPrimitive.h>
+#include <Geometry/Material.h>
+
+#include <Math/Vector.h>
+
+#include <string>
+#include <vector>
+
+// assimp
+#include <assimp.hpp>      // C++ importer interface
+#include <aiScene.h>       // Output data structure
+#include <aiPostProcess.h> // Post processing flags
+
+//forward declarations
+
+namespace OpenEngine {
+    namespace Scene {
+        class ISceneNode;
+    }
+namespace Resources {
+    class ITexture2D;
+    typedef boost::shared_ptr<ITexture2D> ITexture2DPtr;
+
+    using namespace Geometry;
+    using std::string;
+    using std::vector;
+    
+
+/**
+ * Assimp model resource.
+ *
+ * @class AssimpResource AssimpResource.h "AssimpResource.h"
+ */
+class AssimpResource : public IModelResource {
+private: 
+    string file, dir;
+    ISceneNode* root;
+
+    vector<DrawPrimitivePtr> meshes;
+    vector<MaterialPtr> materials;
+
+    void Error(string msg);
+    void Warning(string msg);
+
+    void ReadMeshes(aiMesh** ms, unsigned int size);
+    void ReadMaterials(aiMaterial** ms, unsigned int size);
+    void ReadScene(const aiScene* scene);
+    void ReadNode(aiNode* node, ISceneNode* parent);
+    
+public:
+    AssimpResource(string file);
+    ~AssimpResource();
+    void Load();
+    void Unload();
+    ISceneNode* GetSceneNode();
+};
+
+/**
+ * Assimp resource plug-in.
+ *
+ * @class AssimpPlugin AssimpResource.h "AssimpResource.h"
+ */
+class AssimpPlugin : public IResourcePlugin<IModelResource> {
+public:
+	AssimpPlugin();
+    IModelResourcePtr CreateResource(string file);
+};
+
+} // NS Resources
+} // NS OpenEngine
+
+#endif // _OE_ASSIMP_RESOURCE_H_

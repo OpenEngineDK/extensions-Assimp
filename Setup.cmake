@@ -1,0 +1,8 @@
+INCLUDE(${OE_CURRENT_EXTENSION_DIR}/FindAssimp.cmake)
+
+IF (ASSIMP_FOUND) 
+  INCLUDE_DIRECTORIES(${ASSIMP_INCLUDE_DIR})
+ELSE (ASSIMP_FOUND)
+  MESSAGE ("WARNING: Could not find Assimp - depending targets will be disabled.")
+ENDIF (ASSIMP_FOUND)
+
