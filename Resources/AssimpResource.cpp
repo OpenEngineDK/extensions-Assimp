@@ -15,10 +15,6 @@
 #include <Resources/Exceptions.h>
 
 #include <Geometry/Mesh.h>
-#include <Resources/BufferObject.h>
-#include <Resources/IndexBufferObject.h>
-#include <Geometry/Model.h>
-#include <Scene/ModelNode.h>
 #include <Scene/TransformationNode.h>
 
 #include <Resources/File.h>
@@ -131,8 +127,8 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
             dest[3*j+1] = src[j].y;
             dest[3*j+2] = src[j].z;
         }
-        Float3BufferObjectPtr pos = Float3BufferObjectPtr(new BufferObject<3,float>(dest, num));
-        Float3BufferObjectPtr norm;
+        Float3DataBlockPtr pos = Float3DataBlockPtr(new DataBlock<3,float>(dest, num));
+        Float3DataBlockPtr norm;
         if (m->HasNormals()) {
             // read normals
             src = m->mNormals;
@@ -142,9 +138,9 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
                 dest[j*3+1] = src[j].y;
                 dest[j*3+2] = src[j].z;
             }
-            norm = Float3BufferObjectPtr(new BufferObject<3,float>(dest, num));
+            norm = Float3DataBlockPtr(new DataBlock<3,float>(dest, num));
         }
-        IBufferObjectList texc;
+        IDataBlockList texc;
         logger.info << "numUV: " << m->GetNumUVChannels() << logger.end;
         for (j = 0; j < m->GetNumUVChannels(); ++j) {
             // read texture coordinates
@@ -163,10 +159,10 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
             }
             switch (dim) {
             case 2:
-                texc.push_back(Float2BufferObjectPtr(new BufferObject<2,float>(dest, num)));
+                texc.push_back(Float2DataBlockPtr(new DataBlock<2,float>(dest, num)));
                 break;
             case 3:
-                texc.push_back(Float3BufferObjectPtr(new BufferObject<3,float>(dest, num)));
+                texc.push_back(Float3DataBlockPtr(new DataBlock<3,float>(dest, num)));
                 break;
             default: 
                 delete dest;
@@ -174,7 +170,7 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
             };
         }
 
-        Float3BufferObjectPtr col;
+        Float3DataBlockPtr col;
         if (m->GetNumColorChannels() > 0) {
             aiColor4D* c = m->mColors[0];
             dest = new float[3 * num];
@@ -183,7 +179,7 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
                 dest[j*3+1] = c[j].g;
                 dest[j*3+2] = c[j].b;
             }
-            col = Float3BufferObjectPtr(new BufferObject<3,float>(dest, num));
+            col = Float3DataBlockPtr(new DataBlock<3,float>(dest, num));
         }
         logger.info << "NumFaces: " << m->mNumFaces << logger.end;
 
@@ -195,9 +191,9 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
             indexArr[j*3+1] = src.mIndices[1];
             indexArr[j*3+2] = src.mIndices[2];
         }
-        IndexBufferObjectPtr index = IndexBufferObjectPtr(new IndexBufferObject(indexArr, m->mNumFaces*3));
-        MeshPtr mesh = MeshPtr(new Mesh(pos, norm, texc, col));
-        DrawPrimitivePtr prim = DrawPrimitivePtr(new DrawPrimitive(index, TRIANGLES, materials[m->mMaterialIndex], mesh)); 
+        DataIndicesPtr index = DataIndicesPtr(new DataIndices(indexArr, m->mNumFaces*3));
+        GeometrySetPtr gs = GeometrySetPtr(new GeometrySet(pos, norm, texc, col));
+        MeshPtr prim = MeshPtr(new Mesh(index, TRIANGLES, gs, materials[m->mMaterialIndex])); 
         meshes.push_back(prim);
     }
 }
@@ -262,13 +258,12 @@ void AssimpResource::ReadNode(aiNode* node, ISceneNode* parent) {
         current = tn;
     }
     if (node->mNumMeshes > 0) {
-        Model* model = new Model();
+        ISceneNode* scene = new SceneNode();
         for (i = 0; i < node->mNumMeshes; ++i) {
-            model->AddDrawPrimitive(meshes[node->mMeshes[i]]);
+            scene->AddNode(new MeshNode(meshes[node->mMeshes[i]]));
         } 
-        ModelNode* mn = new ModelNode(model);
-        current->AddNode(mn);
-        current = mn;
+        current->AddNode(scene);
+        current = scene;
     }
     for (i = 0; i < node->mNumChildren; ++i) {
         ReadNode(node->mChildren[i], current);

@@ -13,8 +13,11 @@
 
 #include <Resources/IModelResource.h>
 #include <Resources/IResourcePlugin.h>
-#include <Geometry/DrawPrimitive.h>
+#include <Geometry/Mesh.h>
+#include <Scene/MeshNode.h>
 #include <Geometry/Material.h>
+#include <Geometry/GeometrySet.h>
+#include <Resources/DataBlock.h>
 
 #include <Math/Vector.h>
 
@@ -51,7 +54,7 @@ private:
     string file, dir;
     ISceneNode* root;
 
-    vector<DrawPrimitivePtr> meshes;
+    vector<MeshPtr> meshes;
     vector<MaterialPtr> materials;
 
     void Error(string msg);
