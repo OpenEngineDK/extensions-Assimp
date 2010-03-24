@@ -127,7 +127,7 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
             dest[3*j+1] = src[j].y;
             dest[3*j+2] = src[j].z;
         }
-        Float3DataBlockPtr pos = Float3DataBlockPtr(new DataBlock<3,float>(dest, num));
+        Float3DataBlockPtr pos = Float3DataBlockPtr(new DataBlock<3,float>(num, dest));
         Float3DataBlockPtr norm;
         if (m->HasNormals()) {
             // read normals
@@ -138,7 +138,7 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
                 dest[j*3+1] = src[j].y;
                 dest[j*3+2] = src[j].z;
             }
-            norm = Float3DataBlockPtr(new DataBlock<3,float>(dest, num));
+            norm = Float3DataBlockPtr(new DataBlock<3,float>(num, dest));
         }
         IDataBlockList texc;
         logger.info << "numUV: " << m->GetNumUVChannels() << logger.end;
@@ -159,10 +159,10 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
             }
             switch (dim) {
             case 2:
-                texc.push_back(Float2DataBlockPtr(new DataBlock<2,float>(dest, num)));
+                texc.push_back(Float2DataBlockPtr(new DataBlock<2,float>(num, dest)));
                 break;
             case 3:
-                texc.push_back(Float3DataBlockPtr(new DataBlock<3,float>(dest, num)));
+                texc.push_back(Float3DataBlockPtr(new DataBlock<3,float>(num, dest)));
                 break;
             default: 
                 delete dest;
@@ -179,7 +179,7 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
                 dest[j*3+1] = c[j].g;
                 dest[j*3+2] = c[j].b;
             }
-            col = Float3DataBlockPtr(new DataBlock<3,float>(dest, num));
+            col = Float3DataBlockPtr(new DataBlock<3,float>(num, dest));
         }
         logger.info << "NumFaces: " << m->mNumFaces << logger.end;
 
@@ -191,7 +191,7 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
             indexArr[j*3+1] = src.mIndices[1];
             indexArr[j*3+2] = src.mIndices[2];
         }
-        DataIndicesPtr index = DataIndicesPtr(new DataIndices(indexArr, m->mNumFaces*3));
+        DataIndicesPtr index = DataIndicesPtr(new DataIndices(m->mNumFaces*3, indexArr));
         GeometrySetPtr gs = GeometrySetPtr(new GeometrySet(pos, norm, texc, col));
         MeshPtr prim = MeshPtr(new Mesh(index, TRIANGLES, gs, materials[m->mMaterialIndex])); 
         meshes.push_back(prim);
