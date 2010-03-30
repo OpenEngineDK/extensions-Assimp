@@ -191,7 +191,7 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
             indexArr[j*3+1] = src.mIndices[1];
             indexArr[j*3+2] = src.mIndices[2];
         }
-        DataIndicesPtr index = DataIndicesPtr(new DataIndices(m->mNumFaces*3, indexArr));
+        IndicesPtr index = IndicesPtr(new Indices(m->mNumFaces*3, indexArr));
         GeometrySetPtr gs = GeometrySetPtr(new GeometrySet(pos, norm, texc, col));
         MeshPtr prim = MeshPtr(new Mesh(index, TRIANGLES, gs, materials[m->mMaterialIndex])); 
         meshes.push_back(prim);
