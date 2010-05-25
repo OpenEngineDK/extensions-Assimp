@@ -230,7 +230,7 @@ void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
         if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), path)) {
             logger.info << "path: " << dir + string(path.data) << logger.end;
             ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
-            mat->texr = texr;
+            mat->AddTexture(texr);
         
         }
         materials.push_back(mat);
