@@ -7,5 +7,5 @@ darcs-dev /extensions/Assimp    fh.daimi.au.dk:/users/cgd/code/extensions/Assimp
 
 #data files
 linux /libraries http://openengine.dk/data/libraries/assimp-linux32.tar.gz
-
+darwin /libraries http://openengine.dk/data/libraries/assimp-darwin.tgz
 
