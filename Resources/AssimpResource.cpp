@@ -141,11 +141,11 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
             norm = Float3DataBlockPtr(new DataBlock<3,float>(num, dest));
         }
         IDataBlockList texc;
-        logger.info << "numUV: " << m->GetNumUVChannels() << logger.end;
+        //logger.info << "numUV: " << m->GetNumUVChannels() << logger.end;
         for (j = 0; j < m->GetNumUVChannels(); ++j) {
             // read texture coordinates
             unsigned int dim = m->mNumUVComponents[j];
-            logger.info << "numUVComponents: " << dim << logger.end;
+            //logger.info << "numUVComponents: " << dim << logger.end;
             src = m->mTextureCoords[j];
             dest = new float[dim * num];
             for (unsigned int k = 0; k < num; ++k) {
@@ -181,7 +181,7 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
             }
             col = Float3DataBlockPtr(new DataBlock<3,float>(num, dest));
         }
-        logger.info << "NumFaces: " << m->mNumFaces << logger.end;
+        //logger.info << "NumFaces: " << m->mNumFaces << logger.end;
 
         // assume that we only have triangles (see triangulate option).
         unsigned int* indexArr = new unsigned int[m->mNumFaces * 3];
@@ -208,19 +208,19 @@ void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
         float tmp;
         if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_DIFFUSE, c)) {
             mat->diffuse = Vector<4,float>(c.r, c.g, c.b, 1.0);
-            logger.info << "diffuse: " << Vector<4,float>(c.r, c.g, c.b, 1.0) << logger.end;
+            //logger.info << "diffuse: " << Vector<4,float>(c.r, c.g, c.b, 1.0) << logger.end;
         }
         if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_SPECULAR, c)) {
             mat->specular = Vector<4,float>(c.r, c.g, c.b, 1.0);
-            logger.info << "specular: " << Vector<4,float>(c.r, c.g, c.b, 1.0) << logger.end;
+            //logger.info << "specular: " << Vector<4,float>(c.r, c.g, c.b, 1.0) << logger.end;
         }
         if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_AMBIENT, c)) {
             mat->ambient = Vector<4,float>(c.r, c.g, c.b, 1.0);
-            logger.info << "ambient: " << Vector<4,float>(c.r, c.g, c.b, 1.0) << logger.end;
+            //logger.info << "ambient: " << Vector<4,float>(c.r, c.g, c.b, 1.0) << logger.end;
         }
         if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_EMISSIVE, c)) {
             mat->emission = Vector<4,float>(c.r, c.g, c.b, 1.0);
-            logger.info << "emission: " << Vector<4,float>(c.r, c.g, c.b, 1.0) << logger.end;
+            //logger.info << "emission: " << Vector<4,float>(c.r, c.g, c.b, 1.0) << logger.end;
         }
         if (AI_SUCCESS == m->Get(AI_MATKEY_SHININESS, tmp) && tmp >= 0.0f && tmp <= 128.0f)
             mat->shininess = tmp;
