@@ -20,8 +20,6 @@
 #include <Resources/File.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/ITexture2D.h>
-
-
 #include <Animations/Animation.h>
 #include <Animations/AnimatedTransformation.h>
 #include <Animations/AnimatedMesh.h>
@@ -30,6 +28,7 @@
 #include <Scene/AnimationNode.h>
 #include <Scene/AnimatedTransformationNode.h>
 #include <Scene/AnimatedMeshNode.h>
+
 
 namespace OpenEngine {
 namespace Resources {
@@ -62,7 +61,8 @@ IModelResourcePtr AssimpPlugin::CreateResource(string file) {
 /**
  * Resource constructor.
  */
-AssimpResource::AssimpResource(string file): file(file), root(NULL) {}
+AssimpResource::AssimpResource(string file): file(file), root(NULL), animRoot(NULL) {
+}
 
 /**
  * Resource destructor.
@@ -103,7 +103,6 @@ void AssimpResource::Load() {
 
     ReadScene(scene);
     ReadAnimations(scene->mAnimations, scene->mNumAnimations);
-
     ReadAnimatedMeshes(scene->mMeshes, scene->mNumMeshes);
     // We're done. Everything will be cleaned up by the importer destructor
 }
@@ -122,10 +121,10 @@ ISceneNode* AssimpResource::GetMeshes() {
 }
 
 AnimationNode* AssimpResource::GetAnimations() {
-    cout << "[assimp] animationRoot name: " << animationRoot->GetNodeName() << ", ptr: " << animationRoot << endl;
-    return animationRoot;
+    if( animRoot )
+        cout << "[assimp] animRoot name: " << animRoot->GetNodeName() << ", ptr: " << animRoot << endl;
+    return animRoot;
 }
-
 
 void AssimpResource::Error(string msg) {
     logger.error << "Assimp: " << msg << logger.end;
@@ -292,13 +291,12 @@ void AssimpResource::ReadScene(const aiScene* scene) {
 
 void AssimpResource::ReadNode(aiNode* node, ISceneNode* parent) {
 
-    logger.error << "Reading : " << node->mName.data << logger.end;
-
     unsigned int i;
     ISceneNode* current = parent;
     aiMatrix4x4 t = node->mTransformation;
 
     // If the node holds any mesh we create a parent transformation node for the mesh.
+    if ( node->mNumMeshes > 0 ) {
         aiVector3D pos, scl;
         aiQuaternion rot;
         // NOTE: decompose seems buggy when it comes to rotations
@@ -321,29 +319,28 @@ void AssimpResource::ReadNode(aiNode* node, ISceneNode* parent) {
         current->AddNode(tn);
         current = tn;
 
-        if (node->mNumMeshes > 0) {
-            // Create scene node and add all mesh nodes to it.
-            ISceneNode* scene = new SceneNode();
-            for (i = 0; i < node->mNumMeshes; ++i) {
-                MeshNode* meshNode = new MeshNode(meshes[node->mMeshes[i]]);
-                char buf[16];
-                sprintf(buf, "\n faces: %i", meshNode->GetMesh()->GetGeometrySet()->GetSize());
-                string name = meshNode->GetNodeName();
-                meshNode->SetNodeName(name.append(buf));
-                scene->AddNode(meshNode);
-            } 
-            scene->SetNodeName(node->mName.data);
-            cout << "Adding scenenode with name: " << node->mName.data << " with " << node->mNumMeshes << " number of meshes" << endl;
-            current->AddNode(scene);
-            current = scene;
-        }
+        // Create scene node and add all mesh nodes to it.
+        ISceneNode* scene = new SceneNode();
+        for (i = 0; i < node->mNumMeshes; ++i) {
+            MeshNode* meshNode = new MeshNode(meshes[node->mMeshes[i]]);
+            char buf[16];
+            sprintf(buf, "\n faces: %i", meshNode->GetMesh()->GetGeometrySet()->GetSize());
+            string name = meshNode->GetNodeName();
+            meshNode->SetNodeName(name.append(buf));
+            scene->AddNode(meshNode);
+        } 
+        scene->SetNodeName(node->mName.data);
+        cout << "Adding scenenode with name: " << node->mName.data << " with " << node->mNumMeshes << " number of meshes" << endl;
+        current->AddNode(scene);
+        current = scene;
+
         // Associate node name with the transformation node we just created.
         if( transMap.find(node->mName.data) == transMap.end() ){
             transMap[node->mName.data] = tn;
         }else{
             logger.warning << "Duplicate MeshNode with name " << node->mName.data << " exists." << logger.end;
         }
-    
+    }
 
     // Go on and read nodes recursively.
     for (i = 0; i < node->mNumChildren; ++i) {
@@ -355,11 +352,10 @@ void AssimpResource::ReadNode(aiNode* node, ISceneNode* parent) {
 void AssimpResource::ReadAnimations(aiAnimation** ani, unsigned int size) {
 
     if( size > 0 ){
-
-        animationRoot = new AnimationNode();
-        cout << "AnimationRoot: " << animationRoot << endl;
+        animRoot = new AnimationNode();
+        cout << "AnimationRoot: " << animRoot << endl;
         //root->AddNode(animationRoot);
-        animationRoot->SetNodeName("Animation Root"); 
+        animRoot->SetNodeName("Animation Root"); 
         
         for( unsigned int animIdx = 0; animIdx < size; animIdx++ ){
             aiAnimation* anim = ani[animIdx];
@@ -370,7 +366,7 @@ void AssimpResource::ReadAnimations(aiAnimation** ani, unsigned int size) {
             animation->SetTicksPerSecond(anim->mTicksPerSecond);
 
             AnimationNode* animNode = new AnimationNode(animation);
-            animationRoot->AddNode(animNode);
+            animRoot->AddNode(animNode);
 
             cout << "Animation " << animIdx << ":" << endl;
             cout << "Name: " << anim->mName.data << endl;
@@ -408,26 +404,29 @@ void AssimpResource::ReadAnimations(aiAnimation** ani, unsigned int size) {
                         aiQuatKey rot = rotKeyList[rotKeyIdx];
                         
                         // Assuming time is in seconds, convert to micro sec - TODO: calc ticks.
-                        unsigned int usec = rot.mTime * 1000000;
+                        unsigned int usec = rot.mTime * 1000000.0;
 
                         animTrans->AddRotationKey(usec, Quaternion<float>(rot.mValue.w, 
                                                                           rot.mValue.x, 
                                                                           rot.mValue.y, 
                                                                           rot.mValue.z) );
 
-                        cout << "Rotation Key " << rotKeyIdx << " time: " << usec << " quat(x,y,z,w): " << rot.mValue.x << ", " << rot.mValue.y << ", " << rot.mValue.z << ", " << rot.mValue.w << endl;
+                        //cout << "Rotation Key " << rotKeyIdx << " time: " << usec << " quat(x,y,z,w): " << rot.mValue.x << ", " << rot.mValue.y << ", " << rot.mValue.z << ", " << rot.mValue.w << endl;
                     }
+
+                    // Add all position key/value pairs to the animated transformation node.
                     aiVectorKey* posKeyList = bone->mPositionKeys;
                     for( unsigned int posKeyIdx = 0; posKeyIdx < bone->mNumPositionKeys; posKeyIdx++ ){
                         aiVectorKey pos = posKeyList[posKeyIdx];
+                        aiVector3D  vec = pos.mValue;
 
                         // Assuming time is in seconds, convert to micro sec - TODO: calc ticks.
-                        unsigned int usec = pos.mTime * 1000000;
+                        unsigned int usec = pos.mTime * 1000000.0;
 
-                        cout << "Position Key" << posKeyIdx << " time: " << usec << " pos (x,y,z): " << pos.mValue.x << ", " << pos.mValue.y << ", " << pos.mValue.z << endl;
+                        animTrans->AddPositionKey(usec, Vector<3,float>(vec.x, vec.y, vec.z));
+
+                        cout << "Position Key" << posKeyIdx << " time: " << usec << " pos (x,y,z): " << vec.x << ", " << vec.y << ", " << vec.z << endl;
                     }
-
-
 
                     // Add the animated transformation (aka channel).
                     animation->AddAnimatedTransformation(animTrans);
@@ -495,14 +494,12 @@ void AssimpResource::ReadAnimatedMeshes(aiMesh** ms, unsigned int size) {
                 }
 
                 // Add animated mesh node to animation root.
-                animationRoot->AddNode(animMeshNode); 
+                animRoot->AddNode(animMeshNode); 
 
             }
         }
     }
-
 }
-
 
 } // NS Resources
 } // NS OpenEngine

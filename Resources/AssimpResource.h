@@ -56,7 +56,7 @@ class AssimpResource : public IModelResource {
 private: 
     string file, dir;
     ISceneNode* root;
-    AnimationNode* animationRoot;
+    AnimationNode* animRoot;
 
     vector<MeshPtr> meshes;
     vector<MaterialPtr> materials;
@@ -81,10 +81,9 @@ public:
     void Load();
     void Unload();
     ISceneNode* GetSceneNode();
+
     ISceneNode* GetMeshes();
     AnimationNode* GetAnimations();
-
-    
 };
 
 /**
