@@ -15,6 +15,7 @@
 #include <Resources/IResourcePlugin.h>
 #include <Geometry/Mesh.h>
 #include <Scene/MeshNode.h>
+#include <Scene/TransformationNode.h>
 #include <Geometry/Material.h>
 #include <Geometry/GeometrySet.h>
 #include <Resources/DataBlock.h>
@@ -23,6 +24,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 // assimp
 #include <assimp.hpp>      // C++ importer interface
@@ -30,10 +32,11 @@
 #include <aiPostProcess.h> // Post processing flags
 
 //forward declarations
-
 namespace OpenEngine {
     namespace Scene {
         class ISceneNode;
+        class TransformationNode;
+        class AnimationNode;
     }
 namespace Resources {
     class ITexture2D;
@@ -53,9 +56,13 @@ class AssimpResource : public IModelResource {
 private: 
     string file, dir;
     ISceneNode* root;
+    AnimationNode* animationRoot;
 
     vector<MeshPtr> meshes;
     vector<MaterialPtr> materials;
+
+    map<std::string, OpenEngine::Scene::TransformationNode*> transMap;
+    map<aiMesh*, OpenEngine::Geometry::MeshPtr> meshMap;
 
     void Error(string msg);
     void Warning(string msg);
@@ -64,13 +71,20 @@ private:
     void ReadMaterials(aiMaterial** ms, unsigned int size);
     void ReadScene(const aiScene* scene);
     void ReadNode(aiNode* node, ISceneNode* parent);
-    
+
+    void ReadAnimations(aiAnimation** ani, unsigned int size);
+    void ReadAnimatedMeshes(aiMesh** ms, unsigned int size);
+
 public:
     AssimpResource(string file);
     ~AssimpResource();
     void Load();
     void Unload();
     ISceneNode* GetSceneNode();
+    ISceneNode* GetMeshes();
+    AnimationNode* GetAnimations();
+
+    
 };
 
 /**
