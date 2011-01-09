@@ -22,10 +22,10 @@
 #include <Resources/ITexture2D.h>
 
 
-#include <Animation/Animation.h>
-#include <Animation/AnimatedTransformation.h>
-#include <Animation/AnimatedMesh.h>
-#include <Animation/Bone.h>
+#include <Animations/Animation.h>
+#include <Animations/AnimatedTransformation.h>
+#include <Animations/AnimatedMesh.h>
+#include <Animations/Bone.h>
 
 #include <Scene/AnimationNode.h>
 #include <Scene/AnimatedTransformationNode.h>
