@@ -237,6 +237,20 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
         }
     }
 }
+
+inline void ReadTextures(aiTextureType type, string name, aiMaterial* m, MaterialPtr mat, string dir) {
+    // for now we only read the top element of each texture stack.
+    // later on we should load each stack together with blending operations.
+    aiString path;
+    unsigned int count = m->GetTextureCount(type);
+    // for (unsigned int i = 0; i < count; ++i) {
+    if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(type, count-1), path)) {
+            logger.info << name + string(" map path: ") << dir + string(path.data) << logger.end;
+            ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
+            mat->AddTexture(texr, name);
+        // }
+    }
+}
     
 void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
     // logger.info << "NumMaterials: " << size << logger.end;
@@ -271,38 +285,13 @@ void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
         if (AI_SUCCESS == m->Get(AI_MATKEY_SHININESS, tmp) && tmp >= 0.0f && tmp <= 128.0f)
             mat->shininess = tmp;
         
-        // just read the stack 0 texture if there is any
-        aiString path;
-        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_AMBIENT, 0), path)) {
-            logger.info << "ambient map path: " << dir + string(path.data) << logger.end;
-            ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
-            mat->AddTexture(texr, "ambient");
-        }
-        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), path)) {
-            logger.info << "diffuse map path: " << dir + string(path.data) << logger.end;
-            ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
-            mat->AddTexture(texr, "diffuse");
-        }
-        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_SPECULAR, 0), path)) {
-            logger.info << "specular map path: " << dir + string(path.data) << logger.end;
-            ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
-            mat->AddTexture(texr, "specular");
-        }
-        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_EMISSIVE, 0), path)) {
-            logger.info << "emissive map path: " << dir + string(path.data) << logger.end;
-            ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
-            mat->AddTexture(texr, "emissive");
-        }
-        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_NORMALS, 0), path)) {
-            logger.info << "normal map path: " << dir + string(path.data) << logger.end;
-            ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
-            mat->AddTexture(texr, "normals");
-        }
-        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_HEIGHT, 0), path)) {
-            logger.info << "height map path: " << dir + string(path.data) << logger.end;
-            ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
-            mat->AddTexture(texr, "height");
-        }
+        ReadTextures(aiTextureType_AMBIENT, "ambient", m, mat, dir);
+        ReadTextures(aiTextureType_DIFFUSE, "diffuse", m, mat, dir);
+        ReadTextures(aiTextureType_SPECULAR, "specular", m, mat, dir);
+        ReadTextures(aiTextureType_EMISSIVE, "emissive", m, mat, dir);
+        ReadTextures(aiTextureType_NORMALS, "normals", m, mat, dir);
+        ReadTextures(aiTextureType_HEIGHT, "height", m, mat, dir);
+
         materials.push_back(mat);
     }
 }
