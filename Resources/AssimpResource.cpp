@@ -84,7 +84,7 @@ void AssimpResource::Load() {
     const aiScene* scene = importer.ReadFile( file, 
                                               //aiProcess_CalcTangentSpace       | 
                                               //aiProcess_FlipUVs                |
-                                              //aiProcess_MakeLeftHanded         |
+                                              aiProcess_MakeLeftHanded         |
                                               aiProcess_Triangulate            |
                                               aiProcess_JoinIdenticalVertices  |
                                               aiProcess_GenSmoothNormals       |
@@ -239,39 +239,69 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
 }
     
 void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
-    logger.info << "NumMaterials: " << size << logger.end;
+    // logger.info << "NumMaterials: " << size << logger.end;
     unsigned int i;
     for (i = 0; i < size; ++i) {
         MaterialPtr mat = MaterialPtr(new Material);
         aiMaterial* m = ms[i];
         aiColor3D c;
         float tmp;
-        if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_DIFFUSE, c)) {
+        int shade;
+        if (AI_SUCCESS == m->Get(AI_MATKEY_SHADING_MODEL, shade)) { 
+            switch (shade) {
+            case aiShadingMode_Gouraud:
+                logger.info << "use gouraud shader" << logger.end;
+                break;
+            case aiShadingMode_Phong:
+                mat->shading = Material::PHONG;
+                logger.info << "use phong shader" << logger.end;
+                break;
+            default:
+                mat->shading = Material::NONE;
+            }
+        }
+        if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_DIFFUSE, c)) 
             mat->diffuse = Vector<4,float>(c.r, c.g, c.b, 1.0);
-            //logger.info << "diffuse: " << Vector<4,float>(c.r, c.g, c.b, 1.0) << logger.end;
-        }
-        if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_SPECULAR, c)) {
+        if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_SPECULAR, c)) 
             mat->specular = Vector<4,float>(c.r, c.g, c.b, 1.0);
-            //logger.info << "specular: " << Vector<4,float>(c.r, c.g, c.b, 1.0) << logger.end;
-        }
-        if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_AMBIENT, c)) {
+            if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_AMBIENT, c)) 
             mat->ambient = Vector<4,float>(c.r, c.g, c.b, 1.0);
-            //logger.info << "ambient: " << Vector<4,float>(c.r, c.g, c.b, 1.0) << logger.end;
-        }
-        if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_EMISSIVE, c)) {
+        if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_EMISSIVE, c)) 
             mat->emission = Vector<4,float>(c.r, c.g, c.b, 1.0);
-            //logger.info << "emission: " << Vector<4,float>(c.r, c.g, c.b, 1.0) << logger.end;
-        }
         if (AI_SUCCESS == m->Get(AI_MATKEY_SHININESS, tmp) && tmp >= 0.0f && tmp <= 128.0f)
             mat->shininess = tmp;
         
         // just read the stack 0 texture if there is any
         aiString path;
-        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), path)) {
-            logger.info << "path: " << dir + string(path.data) << logger.end;
+        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_AMBIENT, 0), path)) {
+            logger.info << "ambient map path: " << dir + string(path.data) << logger.end;
             ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
-            mat->AddTexture(texr);
-        
+            mat->AddTexture(texr, "ambient");
+        }
+        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), path)) {
+            logger.info << "diffuse map path: " << dir + string(path.data) << logger.end;
+            ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
+            mat->AddTexture(texr, "diffuse");
+        }
+        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_SPECULAR, 0), path)) {
+            logger.info << "specular map path: " << dir + string(path.data) << logger.end;
+            ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
+            mat->AddTexture(texr, "specular");
+        }
+        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_EMISSIVE, 0), path)) {
+            logger.info << "emissive map path: " << dir + string(path.data) << logger.end;
+            ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
+            mat->AddTexture(texr, "emissive");
+        }
+        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_NORMALS, 0), path)) {
+            logger.info << "normal map path: " << dir + string(path.data) << logger.end;
+            ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
+            mat->AddTexture(texr, "normals");
+        }
+        if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(aiTextureType_HEIGHT, 0), path)) {
+            logger.info << "height map path: " << dir + string(path.data) << logger.end;
+            ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
+            mat->AddTexture(texr, "height");
         }
         materials.push_back(mat);
     }
