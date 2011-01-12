@@ -270,8 +270,13 @@ void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
                 mat->shading = Material::PHONG;
                 logger.info << "use phong shader" << logger.end;
                 break;
+            case aiShadingMode_Blinn:
+                mat->shading = Material::BLINN;
+                logger.info << "use blinn shader" << logger.end;
+                break;
             default:
                 mat->shading = Material::NONE;
+                logger.info << "no shader found" << logger.end;
             }
         }
         if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_DIFFUSE, c)) 
