@@ -84,6 +84,7 @@ void AssimpResource::Load() {
     const aiScene* scene = importer.ReadFile( file, 
                                               //aiProcess_CalcTangentSpace       | 
                                               //aiProcess_FlipUVs                |
+                                              aiProcess_FlipWindingOrder       |
                                               aiProcess_MakeLeftHanded         |
                                               aiProcess_Triangulate            |
                                               aiProcess_JoinIdenticalVertices  |
@@ -175,6 +176,7 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
             }
             norm = Float3DataBlockPtr(new DataBlock<3,float>(num, dest));
         }
+
         IDataBlockList texc;
         //logger.info << "numUV: " << m->GetNumUVChannels() << logger.end;
         for (j = 0; j < m->GetNumUVChannels(); ++j) {
@@ -228,6 +230,35 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
         }
         IndicesPtr index = IndicesPtr(new Indices(m->mNumFaces*3, indexArr));
         GeometrySetPtr gs = GeometrySetPtr(new GeometrySet(pos, norm, texc, col));
+
+        Float3DataBlockPtr tans;
+        Float3DataBlockPtr bitans;
+        if (m->HasTangentsAndBitangents()) {
+            logger.info << "reading tangents and bitangents." << logger.end;
+            // read tangents
+            src = m->mTangents;
+            dest = new float[3 * num];
+            for (j = 0; j < num; ++j) {
+                dest[j*3]   = src[j].x;
+                dest[j*3+1] = src[j].y;
+                dest[j*3+2] = src[j].z;
+            }
+            tans = Float3DataBlockPtr(new DataBlock<3,float>(num, dest));
+
+            // read bitangents
+            src = m->mBitangents;
+            dest = new float[3 * num];
+            for (j = 0; j < num; ++j) {
+                dest[j*3]   = src[j].x;
+                dest[j*3+1] = src[j].y;
+                dest[j*3+2] = src[j].z;
+            }
+            bitans = Float3DataBlockPtr(new DataBlock<3,float>(num, dest));
+
+            gs->AddAttributeList("tangent", tans);
+            gs->AddAttributeList("bitangent", bitans);
+        }
+
         MeshPtr prim = MeshPtr(new Mesh(index, TRIANGLES, gs, materials[m->mMaterialIndex])); 
         meshes.push_back(prim);
 
