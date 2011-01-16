@@ -2,8 +2,10 @@
 
 # standard set of extensions
 darcs /extensions/Assimp        http://openengine.dk/code/branches/animation-Assimp
+darcs /extensions/AnimationFramework http://openengine.dk/code/extensions/AnimationFramework
 
 darcs-dev /extensions/Assimp    fh.daimi.au.dk:/users/cgd/code/branches/animation-Assimp
+darcs-dev /extensions/AnimationFramework fh.daimi.au.dk:/users/cgd/code/extensions/AnimationFramework
 
 #data files
 win32 /libraries http://openengine.dk/data/libraries/assimp-win32.zip

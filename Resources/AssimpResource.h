@@ -82,8 +82,6 @@ public:
     void Unload();
     ISceneNode* GetSceneNode();
 
-    ISceneNode* GetMeshes();
-    AnimationNode* GetAnimations();
 };
 
 /**

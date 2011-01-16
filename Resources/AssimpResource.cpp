@@ -105,6 +105,8 @@ void AssimpResource::Load() {
     ReadScene(scene);
     ReadAnimations(scene->mAnimations, scene->mNumAnimations);
     ReadAnimatedMeshes(scene->mMeshes, scene->mNumMeshes);
+
+    if (animRoot) root->AddNode(animRoot);
     // We're done. Everything will be cleaned up by the importer destructor
 }
 
@@ -115,16 +117,6 @@ void AssimpResource::Unload() {
 
 ISceneNode* AssimpResource::GetSceneNode() {
     return root;
-}
-
-ISceneNode* AssimpResource::GetMeshes() {
-    return root;
-}
-
-AnimationNode* AssimpResource::GetAnimations() {
-    if( animRoot )
-        cout << "[assimp] animRoot name: " << animRoot->GetNodeName() << ", ptr: " << animRoot << endl;
-    return animRoot;
 }
 
 void AssimpResource::Error(string msg) {
@@ -385,11 +377,11 @@ void AssimpResource::ReadNode(aiNode* node, ISceneNode* parent) {
             MeshNode* meshNode = new MeshNode(meshes[node->mMeshes[i]]);
             char buf[16];
             sprintf(buf, "\n faces: %i", meshNode->GetMesh()->GetGeometrySet()->GetSize());
-            string name = meshNode->GetNodeName();
-            meshNode->SetNodeName(name.append(buf));
+            string name = meshNode->GetInfo();
+            meshNode->SetInfo(name.append(buf));
             scene->AddNode(meshNode);
         } 
-        scene->SetNodeName(node->mName.data);
+        scene->SetInfo(node->mName.data);
         //cout << "Adding scenenode with name: " << node->mName.data << " with " << node->mNumMeshes << " number of meshes" << endl;
         current->AddNode(scene);
         current = scene;
@@ -415,11 +407,11 @@ void AssimpResource::ReadNode(aiNode* node, ISceneNode* parent) {
             animRoot = new AnimationNode();
             //cout << "AnimationRoot: " << animRoot << endl;
             //root->AddNode(animationRoot);
-            //animRoot->SetNodeName("Animation Root"); 
-        
+            //animRoot->SetInfo("Animation Root"); 
+            
             for( unsigned int animIdx = 0; animIdx < size; animIdx++ ){
                 aiAnimation* anim = ani[animIdx];
-
+                
                 Animation* animation = new Animation();
             animation->SetName(anim->mName.data);
             animation->SetDuration(anim->mDuration*1000000);
@@ -447,7 +439,7 @@ void AssimpResource::ReadNode(aiNode* node, ISceneNode* parent) {
                     animTrans->SetName(bone->mNodeName.data);
 
                     AnimatedTransformationNode* animTransNode = new AnimatedTransformationNode(animTrans);
-                    animTransNode->SetNodeName(animTrans->GetName().append("\n[AnimTransNode]"));
+                    animTransNode->SetInfo(animTrans->GetName().append("\n[AnimTransNode]"));
                     animNode->AddNode(animTransNode);
 
                     //cout << "Bone " << boneIdx << ":" << endl;
