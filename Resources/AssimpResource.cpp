@@ -84,7 +84,7 @@ void AssimpResource::Load() {
     const aiScene* scene = importer.ReadFile( file, 
                                               //aiProcess_CalcTangentSpace       | 
                                               //aiProcess_FlipUVs                |
-                                              // aiProcess_FlipWindingOrder       |
+                                              //aiProcess_FlipWindingOrder       |
                                               //aiProcess_MakeLeftHanded         |
                                               aiProcess_Triangulate            |
                                               aiProcess_JoinIdenticalVertices  |
@@ -138,20 +138,20 @@ void AssimpResource::Warning(string msg) {
 
 void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
     unsigned int i, j;
-    logger.info << "meshCount: " << size << logger.end;
+    //    logger.info << "meshCount: " << size << logger.end;
     for (i = 0; i < size; ++i) {
         aiMesh* m = ms[i];
-        cout << "MeshName:   " << m->mName.data << endl;
-        cout << "numBones:   " << m->mNumBones << endl; 
+        //cout << "MeshName:   " << m->mName.data << endl;
+        //cout << "numBones:   " << m->mNumBones << endl; 
         for(unsigned int b=0; b<m->mNumBones; b++){
             aiBone* bone = m->mBones[b];
-            cout << "   bone: " << b << endl;
-            cout << "   numWeights: " << bone->mNumWeights << endl;
-            cout << "   [";
+            //cout << "   bone: " << b << endl;
+            //cout << "   numWeights: " << bone->mNumWeights << endl;
+            //cout << "   [";
             for(unsigned int v=0; v<bone->mNumWeights; v++){
-                cout << bone->mWeights[v].mVertexId << ", ";
+                //cout << bone->mWeights[v].mVertexId << ", ";
             }
-            cout << "]" << endl;
+            //cout << "]" << endl;
         }
 
         // read vertices
@@ -351,29 +351,34 @@ void AssimpResource::ReadNode(aiNode* node, ISceneNode* parent) {
     aiMatrix4x4 t = node->mTransformation;
 
     // If the node holds any mesh we create a parent transformation node for the mesh.
+    aiVector3D pos, scl;
+    aiQuaternion rot;
+    // NOTE: decompose seems buggy when it comes to rotations
+    t.Decompose(scl, rot, pos);
+    // Use rotation matrix to construct rotation quaternion instead.
+    aiMatrix3x3 m3 = rot.GetMatrix();
+    // Try creating quaternion from aiMatrix which seems correct.
+//     Quaternion<float> q = Quaternion<float>(Matrix<3,3,float>(m3.a1, m3.a2, m3.a3, 
+//                                                               m3.b1, m3.b2, m3.b3,  
+//                                                               m3.c1, m3.c2, m3.c3));
+
+    Quaternion<float> q = Quaternion<float>(Matrix<3,3,float>(m3.a1, m3.b1, m3.c1, 
+                                                              m3.a2, m3.b2, m3.c2,  
+                                                              m3.a3, m3.b3, m3.c3));
+
+    // Create parent transformation node.
+    TransformationNode* tn = new TransformationNode();
+    tn->SetPosition(Vector<3,float>(pos.x, pos.y, pos.z));
+    tn->SetScale(Vector<3,float>(scl.x, scl.y, scl.z));
+    tn->SetRotation(q);
+    //tn->SetRotation(Quaternion<float>(rot.w, Vector<3,float>(rot.x, rot.y, rot.z)));
+    //        tn->SetRotation(rot);
+
+        
+    current->AddNode(tn);
+    current = tn;
+
     if ( node->mNumMeshes > 0 ) {
-        aiVector3D pos, scl;
-        aiQuaternion rot;
-        // NOTE: decompose seems buggy when it comes to rotations
-        t.Decompose(scl, rot, pos);
-        // Use rotation matrix to construct rotation quaternion instead.
-        aiMatrix3x3 m3 = rot.GetMatrix();
-        // Try creating quaternion from aiMatrix which seems correct.
-        Quaternion<float> q = Quaternion<float>(Matrix<3,3,float>(m3.a1, m3.a2, m3.a3, 
-                                                                  m3.b1, m3.b2, m3.b3,  
-                                                                  m3.c1, m3.c2, m3.c3));
-
-        // Create parent transformation node.
-        TransformationNode* tn = new TransformationNode();
-        tn->SetPosition(Vector<3,float>(pos.x, pos.y, pos.z));
-        tn->SetScale(Vector<3,float>(scl.x, scl.y, scl.z));
-        tn->SetRotation(q);
-        //tn->SetRotation(Quaternion<float>(rot.w, Vector<3,float>(rot.x, rot.y, rot.z)));
-        //        tn->SetRotation(rot);
-
-        current->AddNode(tn);
-        current = tn;
-
         // Create scene node and add all mesh nodes to it.
         ISceneNode* scene = new SceneNode();
         for (i = 0; i < node->mNumMeshes; ++i) {
@@ -385,7 +390,7 @@ void AssimpResource::ReadNode(aiNode* node, ISceneNode* parent) {
             scene->AddNode(meshNode);
         } 
         scene->SetNodeName(node->mName.data);
-        cout << "Adding scenenode with name: " << node->mName.data << " with " << node->mNumMeshes << " number of meshes" << endl;
+        //cout << "Adding scenenode with name: " << node->mName.data << " with " << node->mNumMeshes << " number of meshes" << endl;
         current->AddNode(scene);
         current = scene;
 
@@ -404,18 +409,18 @@ void AssimpResource::ReadNode(aiNode* node, ISceneNode* parent) {
 }
 
 
-void AssimpResource::ReadAnimations(aiAnimation** ani, unsigned int size) {
+    void AssimpResource::ReadAnimations(aiAnimation** ani, unsigned int size) {
 
-    if( size > 0 ){
-        animRoot = new AnimationNode();
-        cout << "AnimationRoot: " << animRoot << endl;
-        //root->AddNode(animationRoot);
-        animRoot->SetNodeName("Animation Root"); 
+        if( size > 0 ){
+            animRoot = new AnimationNode();
+            //cout << "AnimationRoot: " << animRoot << endl;
+            //root->AddNode(animationRoot);
+            //animRoot->SetNodeName("Animation Root"); 
         
-        for( unsigned int animIdx = 0; animIdx < size; animIdx++ ){
-            aiAnimation* anim = ani[animIdx];
+            for( unsigned int animIdx = 0; animIdx < size; animIdx++ ){
+                aiAnimation* anim = ani[animIdx];
 
-            Animation* animation = new Animation();
+                Animation* animation = new Animation();
             animation->SetName(anim->mName.data);
             animation->SetDuration(anim->mDuration*1000000);
             animation->SetTicksPerSecond(anim->mTicksPerSecond);
@@ -423,12 +428,12 @@ void AssimpResource::ReadAnimations(aiAnimation** ani, unsigned int size) {
             AnimationNode* animNode = new AnimationNode(animation);
             animRoot->AddNode(animNode);
 
-            cout << "Animation " << animIdx << ":" << endl;
-            cout << "Name: " << anim->mName.data << endl;
-            cout << "Num bone channels: " << anim->mNumChannels << endl;
-            cout << "Num mesh channels: " << anim->mNumMeshChannels << endl;
-            cout << "Duration: " << anim->mDuration << endl;
-            cout << "Ticks per sec:" << anim->mTicksPerSecond << endl;
+            //cout << "Animation " << animIdx << ":" << endl;
+            //cout << "Name: " << anim->mName.data << endl;
+            //cout << "Num bone channels: " << anim->mNumChannels << endl;
+            //cout << "Num mesh channels: " << anim->mNumMeshChannels << endl;
+            //cout << "Duration: " << anim->mDuration << endl;
+            //cout << "Ticks per sec:" << anim->mTicksPerSecond << endl;
         
             aiNodeAnim** boneList = anim->mChannels;
             for( unsigned int boneIdx = 0; boneIdx < anim->mNumChannels; boneIdx++ ){
@@ -445,12 +450,12 @@ void AssimpResource::ReadAnimations(aiAnimation** ani, unsigned int size) {
                     animTransNode->SetNodeName(animTrans->GetName().append("\n[AnimTransNode]"));
                     animNode->AddNode(animTransNode);
 
-                    cout << "Bone " << boneIdx << ":" << endl;
-                    cout << "    Name of affected node: " << bone->mNodeName.data << endl; 
-                    cout << "    Addr of affected node: " << itr->second << endl;
-                    cout << "    Num position keys: " << bone->mNumPositionKeys << endl;
-                    cout << "    Num rotation keys: " << bone->mNumRotationKeys << endl;
-                    cout << "    Num scaling  keys: " << bone->mNumScalingKeys << endl;
+                    //cout << "Bone " << boneIdx << ":" << endl;
+                    //cout << "    Name of affected node: " << bone->mNodeName.data << endl; 
+                    //cout << "    Addr of affected node: " << itr->second << endl;
+                    //cout << "    Num position keys: " << bone->mNumPositionKeys << endl;
+                    //cout << "    Num rotation keys: " << bone->mNumRotationKeys << endl;
+                    //cout << "    Num scaling  keys: " << bone->mNumScalingKeys << endl;
             
 
                     // Add all rotation key/value pairs the animated transformation node.
@@ -480,7 +485,7 @@ void AssimpResource::ReadAnimations(aiAnimation** ani, unsigned int size) {
 
                         animTrans->AddPositionKey(usec, Vector<3,float>(vec.x, vec.y, vec.z));
 
-                        cout << "Position Key" << posKeyIdx << " time: " << usec << " pos (x,y,z): " << vec.x << ", " << vec.y << ", " << vec.z << endl;
+                        //cout << "Position Key" << posKeyIdx << " time: " << usec << " pos (x,y,z): " << vec.x << ", " << vec.y << ", " << vec.z << endl;
                     }
 
                     // Add the animated transformation (aka channel).
@@ -503,7 +508,7 @@ void AssimpResource::ReadAnimatedMeshes(aiMesh** ms, unsigned int size) {
             // Find the MeshPtr representing the aiMesh.
             map<aiMesh*, OpenEngine::Geometry::MeshPtr>::iterator res;
             if( (res=meshMap.find(mesh))!=meshMap.end() ){
-                cout << "MeshPtr found" << endl;
+                //cout << "MeshPtr found" << endl;
                 
                 // Get MeshPtr
                 OpenEngine::Geometry::MeshPtr meshPtr = res->second;
@@ -511,8 +516,7 @@ void AssimpResource::ReadAnimatedMeshes(aiMesh** ms, unsigned int size) {
                 AnimatedMesh* animMesh = new AnimatedMesh(meshPtr);
                 AnimatedMeshNode* animMeshNode = new AnimatedMeshNode(animMesh);
             
-
-                cout << "numBones: " << mesh->mNumBones << endl;
+                //cout << "numBones: " << mesh->mNumBones << endl;
                 // Iterate through all bones
                 for(unsigned int b=0; b<mesh->mNumBones; b++){
                     const aiBone* aib = mesh->mBones[b];
@@ -540,7 +544,7 @@ void AssimpResource::ReadAnimatedMeshes(aiMesh** ms, unsigned int size) {
                                              aiom.b1, aiom.b2, aiom.b3, aiom.b4,
                                              aiom.c1, aiom.c2, aiom.c3, aiom.c4,
                                              aiom.d1, aiom.d2, aiom.d3, aiom.d4); 
-                    cout << b << " bone offset matrix: " << offset << endl;
+                    //cout << b << " bone offset matrix: " << offset << endl;
 
                     bone->SetOffsetMatrix(offset);
 
