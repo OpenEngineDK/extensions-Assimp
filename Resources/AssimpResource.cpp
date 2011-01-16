@@ -84,8 +84,8 @@ void AssimpResource::Load() {
     const aiScene* scene = importer.ReadFile( file, 
                                               //aiProcess_CalcTangentSpace       | 
                                               //aiProcess_FlipUVs                |
-                                              aiProcess_FlipWindingOrder       |
-                                              aiProcess_MakeLeftHanded         |
+                                              // aiProcess_FlipWindingOrder       |
+                                              //aiProcess_MakeLeftHanded         |
                                               aiProcess_Triangulate            |
                                               aiProcess_JoinIdenticalVertices  |
                                               aiProcess_GenSmoothNormals       |
