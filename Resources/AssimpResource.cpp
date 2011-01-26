@@ -265,11 +265,35 @@ inline void ReadTextures(aiTextureType type, string name, aiMaterial* m, Materia
     // for now we only read the top element of each texture stack.
     // later on we should load each stack together with blending operations.
     aiString path;
+    int uvindex;
+    int wrapping;
     unsigned int count = m->GetTextureCount(type);
     // for (unsigned int i = 0; i < count; ++i) {
+    
+    //if (AI_SUCCESS == m->GetTexture(type, count-1, &path, NULL, &uvindex, NULL, NULL, NULL)) {
+
     if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(type, count-1), path)) {
             logger.info << name + string(" map path: ") << dir + string(path.data) << logger.end;
             ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
+
+            if (!(AI_SUCCESS == m->Get(AI_MATKEY_UVWSRC(type, count-1), uvindex))) 
+                uvindex = 0;
+            if (uvindex > 0) --uvindex;
+            logger.info << "setting uv index to: " << uvindex << logger.end;
+            mat->AddUVIndex(texr, uvindex);
+
+            if (AI_SUCCESS == m->Get(AI_MATKEY_MAPPINGMODE_U(type, count-1), wrapping)) {
+                switch (wrapping) {
+                case aiTextureMapMode_Wrap:
+                    texr->SetWrapping(REPEAT);
+                    break;
+                case aiTextureMapMode_Clamp:
+                    texr->SetWrapping(CLAMP);
+                    break;
+                default:
+                    break;
+                }
+            }
             mat->AddTexture(texr, name);
         // }
     }
