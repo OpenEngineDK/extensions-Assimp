@@ -82,7 +82,7 @@ void AssimpResource::Load() {
     // Usually - if speed is not the most important aspect for you - you'll 
     // propably to request more postprocessing than we do in this example.
     const aiScene* scene = importer.ReadFile( file, 
-                                              //aiProcess_CalcTangentSpace       | 
+                                              aiProcess_CalcTangentSpace       | 
                                               //aiProcess_FlipUVs                |
                                               //aiProcess_FlipWindingOrder       |
                                               //aiProcess_MakeLeftHanded         |
@@ -343,6 +343,7 @@ void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
         ReadTextures(aiTextureType_EMISSIVE, "emissive", m, mat, dir);
         ReadTextures(aiTextureType_NORMALS, "normals", m, mat, dir);
         ReadTextures(aiTextureType_HEIGHT, "height", m, mat, dir);
+        ReadTextures(aiTextureType_OPACITY, "opacity", m, mat, dir);
 
         materials.push_back(mat);
     }
