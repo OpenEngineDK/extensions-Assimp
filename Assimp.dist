@@ -1,4 +1,5 @@
 # Assimp dependencies
+dist /dependencies/AssimpDep/AssimpDep.dist	http://openengine.dk/code/dependencies/AssimpDep/AssimpDep.dist
 
 # standard set of extensions
 darcs /extensions/Assimp        http://openengine.dk/code/extensions/Assimp
