@@ -221,12 +221,40 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
             indexArr[j*3+2] = src.mIndices[2];
         }
         IndicesPtr index = IndicesPtr(new Indices(m->mNumFaces*3, indexArr));
+
+
+        IDataBlockPtr index2; // support index buffers less than 32 bit
+        // assume that we only have triangles (see triangulate option).
+        if (m->mNumVertices < 0xFF) {
+            unsigned char* indices8 = new unsigned char[m->mNumFaces * 3];
+            for (j = 0; j < m->mNumFaces; ++j) {
+                aiFace src = m->mFaces[j];
+                indices8[j*3]   = src.mIndices[0];
+                indices8[j*3+1] = src.mIndices[1];
+                indices8[j*3+2] = src.mIndices[2];
+            }
+            index2 = IDataBlockPtr(new DataBlock<1, unsigned char>(m->mNumFaces * 3, indices8, INDEX_ARRAY));
+        }
+        else if (m->mNumVertices < 0xFFFF) { 
+            unsigned short* indices16 = new unsigned short[m->mNumFaces * 3];
+            for (j = 0; j < m->mNumFaces; ++j) {
+                aiFace src = m->mFaces[j];
+                indices16[j*3]   = src.mIndices[0];
+                indices16[j*3+1] = src.mIndices[1];
+                indices16[j*3+2] = src.mIndices[2];
+            }
+            index2 = IDataBlockPtr(new DataBlock<1, unsigned short>(m->mNumFaces * 3, indices16, INDEX_ARRAY));
+        }
+        else {
+            index2 = index;
+        }
+
         GeometrySetPtr gs = GeometrySetPtr(new GeometrySet(pos, norm, texc, col));
 
         Float3DataBlockPtr tans;
         Float3DataBlockPtr bitans;
         if (m->HasTangentsAndBitangents()) {
-            logger.info << "reading tangents and bitangents." << logger.end;
+            // logger.info << "reading tangents and bitangents." << logger.end;
             // read tangents
             src = m->mTangents;
             dest = new float[3 * num];
@@ -252,6 +280,8 @@ void AssimpResource::ReadMeshes(aiMesh** ms, unsigned int size) {
         }
 
         MeshPtr prim = MeshPtr(new Mesh(index, TRIANGLES, gs, materials[m->mMaterialIndex])); 
+        prim->indices = index2; // hack to enable indices of element size smaller than 4 bytes
+
         meshes.push_back(prim);
 
         // If the aiMesh has bones, associate it with its MeshPtr
@@ -273,13 +303,13 @@ inline void ReadTextures(aiTextureType type, string name, aiMaterial* m, Materia
     //if (AI_SUCCESS == m->GetTexture(type, count-1, &path, NULL, &uvindex, NULL, NULL, NULL)) {
 
     if (AI_SUCCESS == m->Get(AI_MATKEY_TEXTURE(type, count-1), path)) {
-            logger.info << name + string(" map path: ") << dir + string(path.data) << logger.end;
+            // logger.info << name + string(" map path: ") << dir + string(path.data) << logger.end;
             ITexture2DPtr texr = ResourceManager<ITextureResource>::Create(dir + string(path.data));
 
             if (!(AI_SUCCESS == m->Get(AI_MATKEY_UVWSRC(type, count-1), uvindex))) 
                 uvindex = 0;
             if (uvindex > 0) --uvindex;
-            logger.info << "setting uv index to: " << uvindex << logger.end;
+            // logger.info << "setting uv index to: " << uvindex << logger.end;
             mat->AddUVIndex(texr, uvindex);
 
             if (AI_SUCCESS == m->Get(AI_MATKEY_MAPPINGMODE_U(type, count-1), wrapping)) {
@@ -311,19 +341,19 @@ void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
         if (AI_SUCCESS == m->Get(AI_MATKEY_SHADING_MODEL, shade)) { 
             switch (shade) {
             case aiShadingMode_Gouraud:
-                logger.info << "use gouraud shader" << logger.end;
+                // logger.info << "use gouraud shader" << logger.end;
                 break;
             case aiShadingMode_Phong:
                 mat->shading = Material::PHONG;
-                logger.info << "use phong shader" << logger.end;
+                // logger.info << "use phong shader" << logger.end;
                 break;
             case aiShadingMode_Blinn:
                 mat->shading = Material::BLINN;
-                logger.info << "use blinn shader" << logger.end;
+                // logger.info << "use blinn shader" << logger.end;
                 break;
             default:
                 mat->shading = Material::NONE;
-                logger.info << "no shader found" << logger.end;
+                // logger.info << "no shader found" << logger.end;
             }
         }
         if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_DIFFUSE, c)) 
@@ -355,10 +385,10 @@ void AssimpResource::ReadScene(const aiScene* scene) {
     ReadNode(mRoot, root);
 
     // debug
-    map<std::string, TransformationNode*>::iterator itr;
-    for( itr=transMap.begin(); itr!=transMap.end(); itr++ ){
-        logger.info << itr->first << " -> " << itr->second << logger.end;
-    }
+    // map<std::string, TransformationNode*>::iterator itr;
+    // for( itr=transMap.begin(); itr!=transMap.end(); itr++ ){
+        // logger.info << itr->first << " -> " << itr->second << logger.end;
+    // }
 }
 
 void AssimpResource::ReadNode(aiNode* node, ISceneNode* parent) {
