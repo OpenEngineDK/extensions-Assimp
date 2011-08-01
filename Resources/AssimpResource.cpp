@@ -81,19 +81,19 @@ void AssimpResource::Load() {
     // And have it read the given file with some example postprocessing
     // Usually - if speed is not the most important aspect for you - you'll 
     // propably to request more postprocessing than we do in this example.
-    const aiScene* scene = importer.ReadFile( file, 
-                                              aiProcess_CalcTangentSpace       | 
-                                              //aiProcess_FlipUVs                |
-                                              //aiProcess_FlipWindingOrder       |
-                                              //aiProcess_MakeLeftHanded         |
-                                              aiProcess_Triangulate            |
-                                              aiProcess_JoinIdenticalVertices  |
-                                              aiProcess_GenSmoothNormals       |
-                                              aiProcess_SortByPType);
+    const aiScene* scene = importer.ReadFile(file, 
+                                             aiProcess_CalcTangentSpace       | 
+                                             //aiProcess_FlipUVs                |
+                                             //aiProcess_FlipWindingOrder       |
+                                             //aiProcess_MakeLeftHanded         |
+                                             aiProcess_Triangulate            |
+                                             aiProcess_JoinIdenticalVertices  |
+                                             aiProcess_GenSmoothNormals       |
+                                             aiProcess_SortByPType);
     
     // If the import failed, report it
-    if( !scene){
-        Error( importer.GetErrorString() );
+    if(!scene){
+        Error(importer.GetErrorString() );
         return;
     }
     root = new SceneNode();
@@ -333,10 +333,16 @@ void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
     // logger.info << "NumMaterials: " << size << logger.end;
     unsigned int i;
     for (i = 0; i < size; ++i) {
-        MaterialPtr mat = MaterialPtr(new Material);
         aiMaterial* m = ms[i];
-        aiColor3D c;
-        float tmp;
+        aiString s;
+        std::string name = "Default";
+        if (AI_SUCCESS == m->Get(AI_MATKEY_NAME, s))
+            name = string(s.data);
+        
+        MaterialPtr mat = MaterialPtr(new Material(name));
+
+        logger.info << "mat name: " << mat->GetName() << logger.end;
+
         int shade;
         if (AI_SUCCESS == m->Get(AI_MATKEY_SHADING_MODEL, shade)) { 
             switch (shade) {
@@ -356,14 +362,18 @@ void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
                 // logger.info << "no shader found" << logger.end;
             }
         }
+
+        aiColor3D c;
         if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_DIFFUSE, c)) 
             mat->diffuse = Vector<4,float>(c.r, c.g, c.b, 1.0);
         if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_SPECULAR, c)) 
             mat->specular = Vector<4,float>(c.r, c.g, c.b, 1.0);
-            if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_AMBIENT, c)) 
+        if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_AMBIENT, c)) 
             mat->ambient = Vector<4,float>(c.r, c.g, c.b, 1.0);
         if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_EMISSIVE, c)) 
             mat->emission = Vector<4,float>(c.r, c.g, c.b, 1.0);
+
+        float tmp;
         if (AI_SUCCESS == m->Get(AI_MATKEY_SHININESS, tmp) && tmp >= 0.0f && tmp <= 128.0f)
             mat->shininess = tmp;
         
