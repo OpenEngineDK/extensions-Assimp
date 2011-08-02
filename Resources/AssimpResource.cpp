@@ -341,7 +341,7 @@ void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
         
         MaterialPtr mat = MaterialPtr(new Material(name));
 
-        logger.info << "mat name: " << mat->GetName() << logger.end;
+        //logger.info << "mat name: " << mat->GetName() << logger.end;
 
         int shade;
         if (AI_SUCCESS == m->Get(AI_MATKEY_SHADING_MODEL, shade)) { 
@@ -372,10 +372,14 @@ void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
             mat->ambient = Vector<4,float>(c.r, c.g, c.b, 1.0);
         if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_EMISSIVE, c)) 
             mat->emission = Vector<4,float>(c.r, c.g, c.b, 1.0);
-
+        if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_TRANSPARENT, c)) {
+            mat->transparency = (c.r + c.g + c.b) / 3.0;
+            // logger.info << "transparency: " << mat->transparency << logger.end; 
+        }
         float tmp;
         if (AI_SUCCESS == m->Get(AI_MATKEY_SHININESS, tmp) && tmp >= 0.0f && tmp <= 128.0f)
             mat->shininess = tmp;
+
         
         ReadTextures(aiTextureType_AMBIENT, "ambient", m, mat, dir);
         ReadTextures(aiTextureType_DIFFUSE, "diffuse", m, mat, dir);
