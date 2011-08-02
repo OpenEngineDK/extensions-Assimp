@@ -374,6 +374,10 @@ void AssimpResource::ReadMaterials(aiMaterial** ms, unsigned int size) {
             mat->emission = Vector<4,float>(c.r, c.g, c.b, 1.0);
         if (AI_SUCCESS == m->Get(AI_MATKEY_COLOR_TRANSPARENT, c)) {
             mat->transparency = (c.r + c.g + c.b) / 3.0;
+            if (mat->transparency == 1.0) {
+                mat->transparency = 0.0;
+                logger.info << "Ignoring silly transparency value of 1.0 in file: " << file << logger.end;
+            }
             // logger.info << "transparency: " << mat->transparency << logger.end; 
         }
         float tmp;
