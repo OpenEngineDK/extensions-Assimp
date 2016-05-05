@@ -1,12 +1,12 @@
 # Assimp dependencies
-dist /dependencies/AssimpDep/AssimpDep.dist	http://openengine.dk/code/dependencies/AssimpDep/AssimpDep.dist
+dist /dependencies/AssimpDep/AssimpDep.dist	https://raw.githubusercontent.com/OpenEngineDK/dependencies-AssimpDep/master/AssimpDep.dist
 
 # standard set of extensions
-darcs /extensions/Assimp        http://openengine.dk/code/extensions/Assimp
-darcs /extensions/AnimationFramework http://openengine.dk/code/extensions/AnimationFramework
+git /extensions/Assimp        https://github.com/OpenEngineDK/extensions-Assimp.git
+git /extensions/AnimationFramework https://github.com/OpenEngineDK/extensions-AnimationFramework.git
 
-darcs-dev /extensions/Assimp    fh.daimi.au.dk:/users/cgd/code/extensions/Assimp
-darcs-dev /extensions/AnimationFramework fh.daimi.au.dk:/users/cgd/code/extensions/AnimationFramework
+git-dev /extensions/Assimp    git@github.com:OpenEngineDK/extensions-Assimp.git
+git-dev /extensions/AnimationFramework git@github.com:OpenEngineDK/extensions-AnimationFramework.git
 
 #data files
 win32 /libraries http://openengine.dk/data/libraries/assimp-win32.zip
